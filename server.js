@@ -15,12 +15,23 @@ const setupWebSocket = require('./websocket');
 const wss = setupWebSocket(server);
 
 // Middleware
+// Improved CORS: allow deployed frontend and localhost for dev
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5000'
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5000',
-    process.env.FRONTEND_URL || ''
-  ],
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed from this origin: ' + origin), false);
+  },
   credentials: true
 }));
 app.use(express.json());
